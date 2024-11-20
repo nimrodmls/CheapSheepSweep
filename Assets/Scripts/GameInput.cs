@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,8 @@ using UnityEngine;
 public class GameInput : MonoBehaviour
 {
     public static GameInput Instance { get; private set; }
+
+    public event EventHandler OnInteraction;
 
     PlayerInputActions playerInputActions;
 
@@ -23,5 +26,8 @@ public class GameInput : MonoBehaviour
 
         playerInputActions = new PlayerInputActions();
         playerInputActions.Enable();
+
+        playerInputActions.Gameplay.Interaction.performed += 
+            ctx => OnInteraction?.Invoke(this, EventArgs.Empty);
     }
 }

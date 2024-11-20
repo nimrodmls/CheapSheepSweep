@@ -4,9 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GoldCoin : MonoBehaviour
+public class GoldCoin : CollectibleObject
 {
-    public void Interact()
+    public override void Collect(Player player)
     {
         Destroy(gameObject);
     }

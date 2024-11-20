@@ -35,6 +35,27 @@ public class Player : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        GameInput.Instance.OnInteraction += GameInput_OnInteraction;
+    }
+
+    private void GameInput_OnInteraction(object sender, EventArgs e)
+    {
+        RaycastHit2D hit = Physics2D.CircleCast(
+            transform.position, 2, transform.up, 2, LayerMask.GetMask("Interactables"));
+        if (!hit)
+        {
+            return;
+        }
+
+        InteractableObject interactable = hit.collider.GetComponent<InteractableObject>();
+        if (null != interactable)
+        {
+            interactable.Interact(this);
+        }
+    }
+
     private void Update()
     {
         Vector2 movement = GameInput.Instance.GetMovementVector();
@@ -52,25 +73,23 @@ public class Player : MonoBehaviour
         if (null != collision.gameObject.GetComponent<GoldCoin>())
         {
             GoldCoin collected = collision.gameObject.GetComponent<GoldCoin>();
-            collected.Interact();
+            collected.Collect(this);
             OnCoinCollected?.Invoke(
                 this, new OnCoinCollectedEventArgs { collectedCoin = collected });
         }
         else if (null != collision.gameObject.GetComponent<Bomb>())
         {
-            collision.gameObject.GetComponent<Bomb>().Interact();
+            collision.gameObject.GetComponent<Bomb>().Collect(this);
             OnBombCollided?.Invoke(this, EventArgs.Empty);
         }
     }
 
     private void CheckVicinity()
     {
-        //Collider2D hit = Physics2D.OverlapCircle(
-        //    transform.position, bombDetectionRadius, LayerMask.GetMask("Objects"));
         List<Collider2D> results = new List<Collider2D>();
         ContactFilter2D contactFilter = new ContactFilter2D();
         contactFilter.useLayerMask = true;
-        contactFilter.layerMask = LayerMask.GetMask("Objects");
+        contactFilter.layerMask = LayerMask.GetMask("Collectibles");
         int res_count = Physics2D.OverlapCircle(
             transform.position, bombDetectionRadius, contactFilter, results);
         if (0 == res_count)

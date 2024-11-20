@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Bomb : MonoBehaviour
+public class Bomb : CollectibleObject
 {
     [SerializeField] private BombVisual bombVisual;
 
     private bool isExploding = false;
 
-    public void Start()
+    private void Start()
     {
         bombVisual.OnExplodeFinish += BombVisual_OnExplodeFinish;
     }
@@ -25,7 +25,7 @@ public class Bomb : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void Interact()
+    public override void Collect(Player player)
     {
         Destroy(GetComponent<BoxCollider2D>());
         bombVisual.Explode();

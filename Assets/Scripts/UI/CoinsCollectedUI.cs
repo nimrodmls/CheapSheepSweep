@@ -14,13 +14,12 @@ public class CoinsCollectedUI : MonoBehaviour
     [SerializeField] private float collectionTextScaleUp = 1.05f;
     [SerializeField] private float collectionScaleUpSpeed = 0.2f;
 
-    private int coinsCollected = 0;
+    public int CoinsCollected { private set; get; }
 
-    public void CollectCoin(GoldCoin goldCoin)
+    public void CollectCoin(Vector3 sourcePosition)
     {
         Transform collectedCoin = Instantiate(staticCoin, transform.parent);
-        collectedCoin.position = Camera.main.WorldToScreenPoint(
-            goldCoin.GetComponent<Transform>().position);
+        collectedCoin.position = Camera.main.WorldToScreenPoint(sourcePosition);
         Tweener move_anim = collectedCoin.DOMove(collectionPoint.position, collectionSpeed);
         move_anim.OnStart(() => move_anim.SetEase(Ease.Linear));
         move_anim.onComplete = () => OnCollectionAnimationComplete(collectedCoin.gameObject);
@@ -28,13 +27,8 @@ public class CoinsCollectedUI : MonoBehaviour
 
     public void DecrementCounter(int amount)
     {
-        coinsCollected -= amount;
+        CoinsCollected -= amount;
         SetCounter();
-    }
-
-    public void GetCollectionPoint()
-    {
-
     }
 
     private void Awake()
@@ -44,13 +38,13 @@ public class CoinsCollectedUI : MonoBehaviour
 
     private void SetCounter()
     {
-        coinsCollectedText.text = coinsCollected.ToString();
+        coinsCollectedText.text = CoinsCollected.ToString();
     }
 
     private void OnCollectionAnimationComplete(GameObject collectedCoin)
     {
         Destroy(collectedCoin);
-        coinsCollected++;
+        CoinsCollected++;
         SetCounter();
 
         // Peforming the scale up and down animation of the coin collection (on the image & text)

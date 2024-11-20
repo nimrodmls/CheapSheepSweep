@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -7,6 +8,8 @@ using UnityEngine.Tilemaps;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager Instance { get; private set; }
+
     [Header("Coins")]
     [SerializeField] private int maxCoinCount = 10;
     [SerializeField] private float coinSpawnInterval = 5f;
@@ -15,8 +18,14 @@ public class GameManager : MonoBehaviour
     [Header("Bombs")]
     [SerializeField] private int bombHitPenalty = 5;
 
+    [Header("Sheep")]
+    [SerializeField] private GameObject sheepPrefab;
+    [SerializeField] private Transform sheepSpawnPoint;
+    [SerializeField] private int sheepCost;
+
     [Header("Misc")]
     [SerializeField] private Tilemap worldTilemap;
+    [SerializeField] private Tilemap level2Entry;
 
     [Header("UI")]
     [SerializeField] private CoinsCollectedUI coinsCollectedCounter;
@@ -28,11 +37,29 @@ public class GameManager : MonoBehaviour
     private float coinSpawnTimer = 0f;
     private int coinCount = 0;
 
+    private bool hasSheepSpawned = false;
+
+    private void Awake()
+    {
+        if (null != Instance)
+        {
+            Debug.LogError("Only one instance of GameManager is allowed");
+        }
+
+        Instance = this;
+    }
+
     private void Start()
     {
         Player.Instance.OnCoinCollected += Player_OnCoinCollected;
         Player.Instance.OnBombCollided += Player_OnBombCollided;
         Player.Instance.OnBombInVicinity += Player_OnBombInVicinity;
+    }
+
+    private void Sheep_OnInteraction(object sender, EventArgs e)
+    {
+        coinsCollectedCounter.DecrementCounter(sheepCost);
+        level2Entry.gameObject.SetActive(false);
     }
 
     private void Player_OnBombInVicinity(object sender, System.EventArgs e)
@@ -48,7 +75,7 @@ public class GameManager : MonoBehaviour
     private void Player_OnCoinCollected(object sender, Player.OnCoinCollectedEventArgs e)
     {
         coinCount--;
-        coinsCollectedCounter.CollectCoin(e.collectedCoin);
+        coinsCollectedCounter.CollectCoin(e.collectedCoin.transform.position);
     }
 
     private void Update()
@@ -68,6 +95,21 @@ public class GameManager : MonoBehaviour
         {
             alertUI.Deactivate();
         }
+
+        TrySpawnSheep();
+    }
+
+    private bool TrySpawnSheep()
+    {
+        if (!hasSheepSpawned && (coinsCollectedCounter.CoinsCollected >= sheepCost))
+        {
+            GameObject sheep = Instantiate(sheepPrefab, sheepSpawnPoint);
+            sheep.GetComponent<Sheep>().OnInteracted += Sheep_OnInteraction;
+            hasSheepSpawned = true;
+            return true;
+        }
+
+        return false;
     }
 
     private bool TrySpawnObject(GameObject prefab, out GameObject obj)
@@ -90,8 +132,10 @@ public class GameManager : MonoBehaviour
         Vector3 random_cell_position = Vector3.zero;
         do
         {
-            int rand_x = Random.Range(worldTilemap.cellBounds.xMin, worldTilemap.cellBounds.xMax);
-            int rand_y = Random.Range(worldTilemap.cellBounds.yMin, worldTilemap.cellBounds.yMax);
+            int rand_x = UnityEngine.Random.Range(
+                worldTilemap.cellBounds.xMin, worldTilemap.cellBounds.xMax);
+            int rand_y = UnityEngine.Random.Range(
+                worldTilemap.cellBounds.yMin, worldTilemap.cellBounds.yMax);
             random_cell_position = worldTilemap.CellToWorld(new Vector3Int(rand_x, rand_y, 0));
 
             retryCount++;
