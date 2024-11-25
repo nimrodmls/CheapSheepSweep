@@ -10,6 +10,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    #region Properties
+
     [Header("Coins")]
     [SerializeField] private int maxCoinCount = 10;
     [SerializeField] private float coinSpawnInterval = 5f;
@@ -31,6 +33,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CoinsCollectedUI coinsCollectedCounter;
     [SerializeField] private AlertUI alertUI;
 
+    #endregion
+
+    #region Private Fields
+
     // Bounding the max retries of coin spawn so the game won't starve
     private const int spawnMaxRetryCount = 3;
 
@@ -38,6 +44,12 @@ public class GameManager : MonoBehaviour
     private int coinCount = 0;
 
     private bool hasSheepSpawned = false;
+
+    private ObjectPool coinsObjectPool;
+
+    #endregion
+
+    #region MonoBehaviour
 
     private void Awake()
     {
@@ -47,6 +59,9 @@ public class GameManager : MonoBehaviour
         }
 
         Instance = this;
+
+        coinsObjectPool = new ObjectPool(
+            maxCoinCount, coinPrefab, transform);
     }
 
     private void Start()
@@ -55,6 +70,29 @@ public class GameManager : MonoBehaviour
         Player.Instance.OnBombCollided += Player_OnBombCollided;
         Player.Instance.OnBombInVicinity += Player_OnBombInVicinity;
     }
+
+    private void Update()
+    {
+        coinSpawnTimer += Time.deltaTime;
+        if ((coinSpawnTimer >= coinSpawnInterval) && (coinCount < maxCoinCount))
+        {
+            GameObject coinObject;
+            coinSpawnTimer = 0f;
+            if (TrySpawnCoin(coinPrefab, out coinObject))
+            {
+                coinCount++;
+            }
+        }
+
+        if (!Player.Instance.IsBombInVicinity)
+        {
+            alertUI.Deactivate();
+        }
+
+        TrySpawnSheep();
+    }
+
+    #endregion
 
     private void Sheep_OnInteraction(object sender, EventArgs e)
     {
@@ -76,27 +114,7 @@ public class GameManager : MonoBehaviour
     {
         coinCount--;
         coinsCollectedCounter.CollectCoin(e.collectedCoin.transform.position);
-    }
-
-    private void Update()
-    {
-        coinSpawnTimer += Time.deltaTime;
-        if ((coinSpawnTimer >= coinSpawnInterval) && (coinCount < maxCoinCount))
-        {
-            GameObject coinObject;
-            coinSpawnTimer = 0f;
-            if (TrySpawnObject(coinPrefab, out coinObject))
-            {
-                coinCount++;
-            }
-        }
-
-        if (!Player.Instance.IsBombInVicinity)
-        {
-            alertUI.Deactivate();
-        }
-
-        TrySpawnSheep();
+        coinsObjectPool.AddToPool(e.collectedCoin.gameObject);
     }
 
     private bool TrySpawnSheep()
@@ -112,7 +130,7 @@ public class GameManager : MonoBehaviour
         return false;
     }
 
-    private bool TrySpawnObject(GameObject prefab, out GameObject obj)
+    private bool TrySpawnCoin(GameObject prefab, out GameObject obj)
     {
         if (!TryGetRandomEmptyCell(out Vector3 random_cell_position))
         {
@@ -120,7 +138,7 @@ public class GameManager : MonoBehaviour
             return false;
         }
 
-        obj = Instantiate(prefab, null);
+        obj = coinsObjectPool.GetFromPool();
         obj.transform.position = random_cell_position;
         return true;
     }

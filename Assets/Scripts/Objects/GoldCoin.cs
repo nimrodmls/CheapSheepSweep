@@ -7,7 +7,5 @@ using UnityEngine;
 public class GoldCoin : CollectibleObject
 {
     public override void Collect(Player player)
-    {
-        Destroy(gameObject);
-    }
+    {}
 }

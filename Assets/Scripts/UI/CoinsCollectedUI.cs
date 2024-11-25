@@ -8,17 +8,19 @@ public class CoinsCollectedUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI coinsCollectedText;
     [SerializeField] private RectTransform collectionPoint;
-    [SerializeField] private Transform staticCoin;
+    [SerializeField] private GameObject staticCoin;
     [SerializeField] private float collectionSpeed = 2f;
     [SerializeField] private float collectionImageScaleUp = 1.1f;
     [SerializeField] private float collectionTextScaleUp = 1.05f;
     [SerializeField] private float collectionScaleUpSpeed = 0.2f;
 
+    private ObjectPool animatedCoinsPool;
+
     public int CoinsCollected { private set; get; }
 
     public void CollectCoin(Vector3 sourcePosition)
     {
-        Transform collectedCoin = Instantiate(staticCoin, transform.parent);
+        Transform collectedCoin = animatedCoinsPool.GetFromPool().transform;
         collectedCoin.position = Camera.main.WorldToScreenPoint(sourcePosition);
         Tweener move_anim = collectedCoin.DOMove(collectionPoint.position, collectionSpeed);
         move_anim.OnStart(() => move_anim.SetEase(Ease.Linear));
@@ -36,6 +38,11 @@ public class CoinsCollectedUI : MonoBehaviour
         SetCounter();
     }
 
+    private void Start()
+    {
+        animatedCoinsPool = new ObjectPool(20, staticCoin, transform.parent);
+    }
+
     private void SetCounter()
     {
         coinsCollectedText.text = CoinsCollected.ToString();
@@ -43,7 +50,7 @@ public class CoinsCollectedUI : MonoBehaviour
 
     private void OnCollectionAnimationComplete(GameObject collectedCoin)
     {
-        Destroy(collectedCoin);
+        animatedCoinsPool.AddToPool(collectedCoin);
         CoinsCollected++;
         SetCounter();
 

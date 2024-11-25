@@ -24,6 +24,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float rotateSpeed = 400f;
     [SerializeField] private float bombDetectionRadius = 2f;
+    [SerializeField] private float interactionDistance = 1f;
 
     private void Awake()
     {
@@ -42,8 +43,10 @@ public class Player : MonoBehaviour
 
     private void GameInput_OnInteraction(object sender, EventArgs e)
     {
-        RaycastHit2D hit = Physics2D.CircleCast(
-            transform.position, 2, transform.up, 2, LayerMask.GetMask("Interactables"));
+        RaycastHit2D hit = Physics2D.Raycast(
+            transform.position, transform.up, interactionDistance, LayerMask.GetMask("Interactables"));
+        //RaycastHit2D hit = Physics2D.CircleCast(
+        //    transform.position, 2, transform.up, 2, LayerMask.GetMask("Interactables"));
         if (!hit)
         {
             return;
